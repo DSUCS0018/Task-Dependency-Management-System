@@ -41,15 +41,23 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, loading, onRefresh }) => {
         <div className="mt-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Tasks</h2>
             <div className="space-y-2">
-                {tasks.map((task) => (
-                    <TaskItem
-                        key={task.id}
-                        task={task}
-                        onStatusChange={handleStatusChange}
-                        onRefresh={onRefresh}
-                        onDelete={handleDelete}
-                    />
-                ))}
+                {tasks.map((task) => {
+                    // Calculate which tasks depend on this one
+                    const dependentTitles = tasks
+                        .filter(t => t.dependencies && t.dependencies.includes(task.id))
+                        .map(t => t.title);
+
+                    return (
+                        <TaskItem
+                            key={task.id}
+                            task={task}
+                            dependentTitles={dependentTitles}
+                            onStatusChange={handleStatusChange}
+                            onRefresh={onRefresh}
+                            onDelete={handleDelete}
+                        />
+                    );
+                })}
             </div>
         </div>
     );

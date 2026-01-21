@@ -4,8 +4,9 @@ import DependencySelector from './DependencySelector';
 
 interface TaskItemProps {
     task: Task;
+    dependentTitles: string[];
     onStatusChange: (taskId: number, newStatus: TaskStatus) => Promise<void>;
-    onRefresh?: () => void;
+    onRefresh: () => void;
     onDelete?: (taskId: number) => Promise<void>;
 }
 
@@ -16,7 +17,7 @@ const statusColors: Record<string, string> = {
     blocked: 'bg-red-100 text-red-800 border-red-200',
 };
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, onStatusChange, onRefresh, onDelete }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, dependentTitles, onStatusChange, onRefresh, onDelete }) => {
     const [isUpdating, setIsUpdating] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false); // Track delete state
     const [showDependencies, setShowDependencies] = useState(false);
@@ -38,7 +39,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onStatusChange, onRefresh, on
 
     const handleDelete = async () => {
         if (!onDelete) return;
-        if (window.confirm(`Are you sure you want to delete task "${task.title}"?`)) {
+
+        let message = `Are you sure you want to delete task "${task.title}"?`;
+
+        if (dependentTitles.length > 0) {
+            message = `Warning: The following tasks depend on this task:\n${dependentTitles.map(t => `- ${t}`).join('\n')}\n\nDeleting this task will break these dependencies. Do you want to proceed?`;
+        }
+
+        if (window.confirm(message)) {
             try {
                 setIsDeleting(true);
                 await onDelete(task.id);
