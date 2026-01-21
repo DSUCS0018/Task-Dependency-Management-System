@@ -1,8 +1,9 @@
-import React from 'react';
-import type { Task } from '../types';
+import React, { useState } from 'react';
+import type { Task, TaskStatus } from '../types';
 
 interface TaskItemProps {
     task: Task;
+    onStatusChange: (taskId: number, newStatus: TaskStatus) => Promise<void>;
 }
 
 const statusColors: Record<string, string> = {
@@ -12,7 +13,24 @@ const statusColors: Record<string, string> = {
     blocked: 'bg-red-100 text-red-800 border-red-200',
 };
 
-const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, onStatusChange }) => {
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newStatus = e.target.value as TaskStatus;
+        if (newStatus === task.status) return;
+
+        try {
+            setIsUpdating(true);
+            await onStatusChange(task.id, newStatus);
+        } catch (err) {
+            console.error("Failed to update status", err);
+            // Ideally show a toast or error message here
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     return (
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center mb-3 hover:shadow-md transition-shadow">
             <div>
@@ -22,9 +40,20 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
                 )}
             </div>
             <div className="flex items-center space-x-3">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[task.status] || statusColors.pending}`}>
-                    {task.status.replace('_', ' ').toUpperCase()}
-                </span>
+                {isUpdating ? (
+                    <span className="text-sm text-gray-500">Updating...</span>
+                ) : (
+                    <select
+                        value={task.status}
+                        onChange={handleStatusChange}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ${statusColors[task.status] || statusColors.pending}`}
+                    >
+                        <option value="pending">PENDING</option>
+                        <option value="in_progress">IN PROGRESS</option>
+                        <option value="completed">COMPLETED</option>
+                        <option value="blocked">BLOCKED</option>
+                    </select>
+                )}
             </div>
         </div>
     );

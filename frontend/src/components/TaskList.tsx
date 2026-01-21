@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import type { Task } from '../types';
+import type { Task, TaskStatus } from '../types';
 import { taskService } from '../services/api';
 import TaskItem from './TaskItem';
 
@@ -26,7 +26,14 @@ const TaskList: React.FC = () => {
         }
     };
 
-    if (loading) {
+    const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
+        // Optimistic update (optional) or refetch.
+        // Since backend has logic (auto-updates), refetching is safer to see propagated changes.
+        await taskService.updateTaskStatus(taskId, newStatus);
+        fetchTasks();
+    };
+
+    if (loading && tasks.length === 0) {
         return <div className="text-center py-8 text-gray-500">Loading tasks...</div>;
     }
 
@@ -47,7 +54,7 @@ const TaskList: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Tasks</h2>
             <div className="space-y-2">
                 {tasks.map((task) => (
-                    <TaskItem key={task.id} task={task} />
+                    <TaskItem key={task.id} task={task} onStatusChange={handleStatusChange} />
                 ))}
             </div>
         </div>
