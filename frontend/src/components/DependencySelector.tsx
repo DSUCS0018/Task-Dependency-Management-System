@@ -37,21 +37,23 @@ const DependencySelector: React.FC<DependencySelectorProps> = ({ currentTaskId, 
 
         try {
             await taskService.addDependency(currentTaskId, Number(selectedTaskId));
-            setSuccess('Dependency added!');
+            setSuccess('Dependency added successfully!');
             setSelectedTaskId('');
             onDependencyAdded();
             // Clear success message after 3 seconds
             setTimeout(() => setSuccess(null), 3000);
         } catch (err: any) {
             // Handle circular dependency or other errors
+            // Structure: { error: "...", path: [...] }
             if (err.error) {
                 let msg = err.error;
-                if (err.path) {
-                    msg += ` Path: ${err.path.join(' -> ')}`;
+                if (err.path && Array.isArray(err.path)) {
+                    msg += ` Cycle: ${err.path.join(' → ')}`;
                 }
                 setError(msg);
             } else {
-                setError('Failed to add dependency.');
+                setError('Failed to add dependency. Please try again.');
+                console.error(err);
             }
         } finally {
             setLoading(false);
@@ -63,13 +65,13 @@ const DependencySelector: React.FC<DependencySelectorProps> = ({ currentTaskId, 
             <h4 className="text-sm font-semibold text-gray-700 mb-2">Add Dependency (Blocking Task)</h4>
 
             {error && (
-                <div className="mb-2 text-xs text-red-600 bg-red-50 p-1 rounded border border-red-200">
+                <div className="mb-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200 font-medium">
                     {error}
                 </div>
             )}
 
             {success && (
-                <div className="mb-2 text-xs text-green-600 bg-green-50 p-1 rounded border border-green-200">
+                <div className="mb-2 text-xs text-green-600 bg-green-50 p-2 rounded border border-green-200 font-medium">
                     {success}
                 </div>
             )}
@@ -78,7 +80,7 @@ const DependencySelector: React.FC<DependencySelectorProps> = ({ currentTaskId, 
                 <select
                     value={selectedTaskId}
                     onChange={(e) => setSelectedTaskId(Number(e.target.value))}
-                    className="flex-1 text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2"
+                    className="flex-1 text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 disabled:bg-gray-100 disabled:text-gray-500"
                     disabled={loading}
                 >
                     <option value="">Select a task...</option>
@@ -91,7 +93,8 @@ const DependencySelector: React.FC<DependencySelectorProps> = ({ currentTaskId, 
                 <button
                     onClick={handleAdd}
                     disabled={!selectedTaskId || loading}
-                    className="bg-gray-800 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-700 disabled:opacity-50"
+                    className={`px-3 py-1 rounded-md text-sm transition-colors text-white ${loading || !selectedTaskId ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-800 hover:bg-gray-700'
+                        }`}
                 >
                     {loading ? 'Adding...' : 'Add'}
                 </button>
