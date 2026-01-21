@@ -33,6 +33,17 @@ const TaskList: React.FC = () => {
         fetchTasks();
     };
 
+    const handleDelete = async (taskId: number) => {
+        try {
+            await taskService.deleteTask(taskId);
+            // Remove from local list to be snappy, or just refetch
+            setTasks(prev => prev.filter(t => t.id !== taskId));
+        } catch (err) {
+            console.error(err);
+            alert('Failed to delete task');
+        }
+    };
+
     if (loading && tasks.length === 0) {
         return <div className="text-center py-8 text-gray-500">Loading tasks...</div>;
     }
@@ -59,6 +70,7 @@ const TaskList: React.FC = () => {
                         task={task}
                         onStatusChange={handleStatusChange}
                         onRefresh={fetchTasks}
+                        onDelete={handleDelete}
                     />
                 ))}
             </div>
