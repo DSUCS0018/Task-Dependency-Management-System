@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Task, TaskDependency
-from .serializers import TaskDependencySerializer
-from .services import detect_cycle
+from .serializers import TaskDependencySerializer, TaskSerializer
+from .services import detect_cycle, trigger_dependent_updates
 
 class TaskDependencyView(APIView):
     def post(self, request, task_id):
@@ -24,16 +24,31 @@ class TaskDependencyView(APIView):
                     "path": path
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Create dependency
-            # Note: The model's clean() method also checks, but we duplicate here 
-            # for the specific requirement of returning the path error.
-            # We can use get_or_create to avoid duplicates if that's desired, 
-            # but requirements didn't specify. Assuming duplicate check in model handles it.
             try:
                 TaskDependency.objects.create(task=task, depends_on=depends_on_task)
+                
+                # New dependency might affect the task's status immediately
+                # e.g. if the new dependency is blocked, this task becomes blocked.
+                from .services import update_task_status
+                update_task_status(task)
+                
                 return Response({"status": "Dependency added"}, status=status.HTTP_201_CREATED)
             except Exception as e:
-                 # Clean failed or unique constraint
                  return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
                  
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TaskDetailView(APIView):
+    def patch(self, request, task_id):
+        task = get_object_or_404(Task, id=task_id)
+        serializer = TaskSerializer(task, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            task = serializer.save()
+            
+            # Trigger updates for dependent tasks
+            trigger_dependent_updates(task)
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -49,3 +49,73 @@ def detect_cycle(source_task_id, target_task_id):
             continue
 
     return False, []
+
+def update_task_status(task):
+    """
+    Updates the task's status based on its dependencies.
+    Returns True if status changed, False otherwise.
+    Rules:
+    - ALL dependencies 'completed' -> 'in_progress'
+    - ANY dependency 'blocked' -> 'blocked'
+    - Dependencies exist but not all 'completed' -> 'pending' (unless already 'blocked' by above rule)
+    """
+    dependencies = task.dependencies.all()
+    
+    if not dependencies.exists():
+        # If no dependencies, we don't automatically change status based on them.
+        # It's up to manual update or default state.
+        return False
+        
+    blocked_exists = False
+    all_completed = True
+    
+    for dep in dependencies:
+        dep_status = dep.depends_on.status
+        if dep_status == 'blocked':
+            blocked_exists = True
+        if dep_status != 'completed':
+            all_completed = False
+            
+    new_status = task.status
+    
+    if blocked_exists:
+        new_status = 'blocked'
+    elif all_completed:
+        # If previously pending or blocked, and now all dependencies are done, it becomes ready (in_progress)
+        # Note: If it was already completed, should we revert it?
+        # Requirement: "If ALL dependencies are 'completed' set status to 'in_progress' (ready to work)"
+        # Usually if a task is already completed, we shouldn't revert it to in_progress automatically 
+        # just because dependencies are fine. But if it was pending/blocked, yes.
+        # Let's assume we only move forward or to blocked. 
+        # But for strict adherence: "set status to 'in_progress'".
+        # I'll add a check: if it's already 'completed', don't change it to 'in_progress'. 
+        if task.status != 'completed':
+            new_status = 'in_progress'
+    else:
+        # Dependencies exist but not all completed, and none blocked.
+        # Should be pending.
+        if task.status != 'completed':
+            new_status = 'pending'
+            
+    if task.status != new_status:
+        task.status = new_status
+        task.save()
+        return True
+    
+    return False
+
+def trigger_dependent_updates(task):
+    """
+    Recursively updates status of tasks that depend on the given task.
+    """
+    # Find all tasks that depend on this task
+    # Reverse relation 'dependents' on TaskDependency model
+    # TaskDependency.depends_on == task
+    dependent_relations = task.dependents.all()
+    
+    for relation in dependent_relations:
+        dependent_task = relation.task
+        status_changed = update_task_status(dependent_task)
+        
+        if status_changed:
+            trigger_dependent_updates(dependent_task)
