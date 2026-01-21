@@ -142,6 +142,34 @@ const GraphView: React.FC<GraphViewProps> = ({ tasks }) => {
         setIsDragging(false);
     };
 
+    const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+
+    const handleNodeClick = (e: React.MouseEvent, taskId: number) => {
+        e.stopPropagation();
+        setSelectedTaskId(prev => prev === taskId ? null : taskId);
+    };
+
+    const getOpacity = (nodeId: number, isEdge: boolean = false, edgeSource?: number, edgeTarget?: number) => {
+        if (!selectedTaskId) return 1;
+
+        // If node is selected
+        if (nodeId === selectedTaskId) return 1;
+
+        // If edge connected to selected
+        if (isEdge) {
+            return (edgeSource === selectedTaskId || edgeTarget === selectedTaskId) ? 1 : 0.1;
+        }
+
+        // If node is connected to selected (as dependency or dependent)
+        // Check edges
+        const isConnected = edges.some(e =>
+            (e.source.id === selectedTaskId && e.target.id === nodeId) || // Selected is source, nodeId is target (dependent)
+            (e.target.id === selectedTaskId && e.source.id === nodeId)    // Selected is target, nodeId is source (dependency)
+        );
+
+        return isConnected ? 1 : 0.1;
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'completed': return '#10b981'; // green-500
@@ -167,6 +195,7 @@ const GraphView: React.FC<GraphViewProps> = ({ tasks }) => {
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
+                    onClick={() => setSelectedTaskId(null)} // Deselect on background click
                     viewBox="0 0 800 400"
                 >
                     {/* Transform Group for Zoom/Pan */}
@@ -182,12 +211,18 @@ const GraphView: React.FC<GraphViewProps> = ({ tasks }) => {
                                 stroke="#9ca3af"
                                 strokeWidth="2"
                                 markerEnd="url(#arrow)"
+                                opacity={getOpacity(-1, true, edge.source.id, edge.target.id)}
                             />
                         ))}
 
                         {/* Nodes */}
                         {nodes.map(node => (
-                            <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>
+                            <g
+                                key={node.id}
+                                transform={`translate(${node.x}, ${node.y})`}
+                                onClick={(e) => handleNodeClick(e, node.id)}
+                                style={{ cursor: 'pointer', opacity: getOpacity(node.id) }}
+                            >
                                 <rect
                                     x={-NODE_WIDTH / 2}
                                     y={-NODE_HEIGHT / 2}
@@ -195,8 +230,8 @@ const GraphView: React.FC<GraphViewProps> = ({ tasks }) => {
                                     height={NODE_HEIGHT}
                                     rx="5"
                                     fill="white"
-                                    stroke={getStatusColor(node.status)}
-                                    strokeWidth="2"
+                                    stroke={selectedTaskId === node.id ? '#000' : getStatusColor(node.status)}
+                                    strokeWidth={selectedTaskId === node.id ? 3 : 2}
                                 />
                                 <text
                                     textAnchor="middle"
@@ -208,7 +243,6 @@ const GraphView: React.FC<GraphViewProps> = ({ tasks }) => {
                                 </text>
                             </g>
                         ))}
-
                         {/* Arrow Marker */}
                         <defs>
                             <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
