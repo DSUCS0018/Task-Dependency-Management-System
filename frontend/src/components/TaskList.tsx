@@ -54,7 +54,12 @@ const TaskList: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Tasks</h2>
             <div className="space-y-2">
                 {tasks.map((task) => (
-                    <TaskItem key={task.id} task={task} onStatusChange={handleStatusChange} />
+                    <TaskItem
+                        key={task.id}
+                        task={task}
+                        onStatusChange={handleStatusChange}
+                        onRefresh={fetchTasks}
+                    />
                 ))}
             </div>
         </div>
