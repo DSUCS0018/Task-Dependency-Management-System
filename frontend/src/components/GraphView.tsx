@@ -182,76 +182,86 @@ const GraphView: React.FC<GraphViewProps> = ({ tasks }) => {
     return (
         <div className="mt-8 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Dependency Graph</h2>
-            <div
-                className="border border-gray-100 bg-gray-50 rounded overflow-hidden cursor-move"
-                style={{ height: '400px' }}
-            >
-                <svg
-                    ref={svgRef}
-                    width="100%"
-                    height="100%"
-                    onWheel={handleWheel}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onClick={() => setSelectedTaskId(null)} // Deselect on background click
-                    viewBox="0 0 800 400"
-                >
-                    {/* Transform Group for Zoom/Pan */}
-                    <g transform={`translate(${pan.x + 400}, ${pan.y + 50}) scale(${zoom})`}>
-                        {/* Edges */}
-                        {edges.map((edge, i) => (
-                            <line
-                                key={i}
-                                x1={edge.source.x}
-                                y1={edge.source.y}
-                                x2={edge.target.x}
-                                y2={edge.target.y}
-                                stroke="#9ca3af"
-                                strokeWidth="2"
-                                markerEnd="url(#arrow)"
-                                opacity={getOpacity(-1, true, edge.source.id, edge.target.id)}
-                            />
-                        ))}
 
-                        {/* Nodes */}
-                        {nodes.map(node => (
-                            <g
-                                key={node.id}
-                                transform={`translate(${node.x}, ${node.y})`}
-                                onClick={(e) => handleNodeClick(e, node.id)}
-                                style={{ cursor: 'pointer', opacity: getOpacity(node.id) }}
-                            >
-                                <rect
-                                    x={-NODE_WIDTH / 2}
-                                    y={-NODE_HEIGHT / 2}
-                                    width={NODE_WIDTH}
-                                    height={NODE_HEIGHT}
-                                    rx="5"
-                                    fill="white"
-                                    stroke={selectedTaskId === node.id ? '#000' : getStatusColor(node.status)}
-                                    strokeWidth={selectedTaskId === node.id ? 3 : 2}
+            {tasks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center bg-gray-50 rounded border border-dashed border-gray-300 h-[400px] text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                    <p>Add tasks to see the dependency graph</p>
+                </div>
+            ) : (
+                <div
+                    className="border border-gray-100 bg-gray-50 rounded overflow-hidden cursor-move"
+                    style={{ height: '500px' }}
+                >
+                    <svg
+                        ref={svgRef}
+                        width="100%"
+                        height="100%"
+                        onWheel={handleWheel}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onClick={() => setSelectedTaskId(null)} // Deselect on background click
+                        viewBox="0 0 800 500"
+                    >
+                        {/* Transform Group for Zoom/Pan */}
+                        <g transform={`translate(${pan.x + 400}, ${pan.y + 50}) scale(${zoom})`}>
+                            {/* Edges */}
+                            {edges.map((edge, i) => (
+                                <line
+                                    key={i}
+                                    x1={edge.source.x}
+                                    y1={edge.source.y}
+                                    x2={edge.target.x}
+                                    y2={edge.target.y}
+                                    stroke="#9ca3af"
+                                    strokeWidth="2"
+                                    markerEnd="url(#arrow)"
+                                    opacity={getOpacity(-1, true, edge.source.id, edge.target.id)}
                                 />
-                                <text
-                                    textAnchor="middle"
-                                    dy="0.3em"
-                                    fontSize="12"
-                                    className="pointer-events-none select-none"
+                            ))}
+
+                            {/* Nodes */}
+                            {nodes.map(node => (
+                                <g
+                                    key={node.id}
+                                    transform={`translate(${node.x}, ${node.y})`}
+                                    onClick={(e) => handleNodeClick(e, node.id)}
+                                    style={{ cursor: 'pointer', opacity: getOpacity(node.id) }}
                                 >
-                                    {node.title.slice(0, 15)}{node.title.length > 15 ? '...' : ''}
-                                </text>
-                            </g>
-                        ))}
-                        {/* Arrow Marker */}
-                        <defs>
-                            <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                                <polygon points="0 0, 10 3.5, 0 7" fill="#9ca3af" />
-                            </marker>
-                        </defs>
-                    </g>
-                </svg>
-            </div>
+                                    <rect
+                                        x={-NODE_WIDTH / 2}
+                                        y={-NODE_HEIGHT / 2}
+                                        width={NODE_WIDTH}
+                                        height={NODE_HEIGHT}
+                                        rx="5"
+                                        fill="white"
+                                        stroke={selectedTaskId === node.id ? '#000' : getStatusColor(node.status)}
+                                        strokeWidth={selectedTaskId === node.id ? 3 : 2}
+                                    />
+                                    <text
+                                        textAnchor="middle"
+                                        dy="0.3em"
+                                        fontSize="12"
+                                        className="pointer-events-none select-none"
+                                    >
+                                        {node.title.slice(0, 15)}{node.title.length > 15 ? '...' : ''}
+                                    </text>
+                                </g>
+                            ))}
+                            {/* Arrow Marker */}
+                            <defs>
+                                <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#9ca3af" />
+                                </marker>
+                            </defs>
+                        </g>
+                    </svg>
+                </div>
+            )}
             <div className="mt-2 text-xs text-gray-500 flex gap-2">
                 <span>Zoom: {Math.round(zoom * 100)}%</span>
                 <span>Blue: In Progress | Green: Completed | Red: Blocked | Gray: Pending</span>
