@@ -21,10 +21,9 @@ const DependencySelector: React.FC<DependencySelectorProps> = ({ currentTaskId, 
     const loadTasks = async () => {
         try {
             const data = await taskService.getTasks();
-            // Filter out current task
             setTasks(data.filter(t => t.id !== currentTaskId));
         } catch (err) {
-            console.error('Failed to load tasks for dependency selection', err);
+            console.error('Failed to load tasks', err);
         }
     };
 
@@ -37,14 +36,11 @@ const DependencySelector: React.FC<DependencySelectorProps> = ({ currentTaskId, 
 
         try {
             await taskService.addDependency(currentTaskId, Number(selectedTaskId));
-            setSuccess('Dependency added successfully!');
+            setSuccess('Linked!');
             setSelectedTaskId('');
             onDependencyAdded();
-            // Clear success message after 3 seconds
-            setTimeout(() => setSuccess(null), 3000);
+            setTimeout(() => setSuccess(null), 2000);
         } catch (err: any) {
-            // Handle circular dependency or other errors
-            // Structure: { error: "...", path: [...] }
             if (err.error) {
                 let msg = err.error;
                 if (err.path && Array.isArray(err.path)) {
@@ -52,8 +48,7 @@ const DependencySelector: React.FC<DependencySelectorProps> = ({ currentTaskId, 
                 }
                 setError(msg);
             } else {
-                setError('Failed to add dependency. Please try again.');
-                console.error(err);
+                setError('Failed to link.');
             }
         } finally {
             setLoading(false);
@@ -61,17 +56,19 @@ const DependencySelector: React.FC<DependencySelectorProps> = ({ currentTaskId, 
     };
 
     return (
-        <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">Add Dependency (Blocking Task)</h4>
+        <div className="mt-4 pt-4 border-t border-white/5">
+            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Add Blocking Task
+            </h4>
 
             {error && (
-                <div className="mb-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200 font-medium">
+                <div className="mb-2 text-xs text-red-400 bg-red-500/10 p-2 rounded border border-red-500/20">
                     {error}
                 </div>
             )}
 
             {success && (
-                <div className="mb-2 text-xs text-green-600 bg-green-50 p-2 rounded border border-green-200 font-medium">
+                <div className="mb-2 text-xs text-emerald-400 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
                     {success}
                 </div>
             )}
@@ -80,23 +77,26 @@ const DependencySelector: React.FC<DependencySelectorProps> = ({ currentTaskId, 
                 <select
                     value={selectedTaskId}
                     onChange={(e) => setSelectedTaskId(Number(e.target.value))}
-                    className="flex-1 text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 px-2 disabled:bg-gray-100 disabled:text-gray-500"
+                    className="flex-1 text-sm bg-slate-900/50 border border-slate-700 text-slate-300 rounded-lg focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 py-1.5 px-3 transition-colors"
                     disabled={loading}
                 >
-                    <option value="">Select a task...</option>
+                    <option value="">Select dependency...</option>
                     {tasks.map(task => (
-                        <option key={task.id} value={task.id}>
-                            {task.id}: {task.title}
+                        <option key={task.id} value={task.id} className="bg-slate-800">
+                            #{task.id}: {task.title}
                         </option>
                     ))}
                 </select>
                 <button
                     onClick={handleAdd}
                     disabled={!selectedTaskId || loading}
-                    className={`px-3 py-1 rounded-md text-sm transition-colors text-white ${loading || !selectedTaskId ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-800 hover:bg-gray-700'
-                        }`}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all
+                        ${loading || !selectedTaskId
+                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/20'}
+                    `}
                 >
-                    {loading ? 'Adding...' : 'Add'}
+                    {loading ? '...' : 'Link'}
                 </button>
             </div>
         </div>

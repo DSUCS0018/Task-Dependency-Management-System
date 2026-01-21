@@ -2,14 +2,12 @@ import { useState, useEffect } from 'react';
 import TaskList from './components/TaskList';
 import TaskForm from './components/TaskForm';
 import GraphView from './components/GraphView';
+import Layout from './components/Layout';
 import { taskService } from './services/api';
 import type { Task } from './types';
 
 function App() {
   const [refreshKey, setRefreshKey] = useState(0);
-  // We need tasks in App to pass to GraphView, so we might need to hoist state or fetch twice.
-  // Fetching twice is simpler for now to keep components decoupled, or we can move fetch to App.
-  // Let's move fetch to App to avoid double network requests and keep sync.
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,26 +31,44 @@ function App() {
     setRefreshKey((prev) => prev + 1);
   };
 
-  // Refetch when status changes in list (we can pass this down)
   const handleRefresh = () => {
     fetchTasks();
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-          Task Manager
-        </h1>
-        <TaskForm onTaskAdded={handleTaskAdded} />
+    <Layout>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Form and List */}
+        <div className="lg:col-span-12 xl:col-span-4 space-y-8">
+          <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <span className="p-1 rounded bg-indigo-500/20 text-indigo-400">⚡</span>
+              New Task
+            </h2>
+            <TaskForm onTaskAdded={handleTaskAdded} tasks={tasks} />
+          </section>
 
-        {/* Pass tasks to List and Graph */}
-        <div className="space-y-8">
-          <TaskList tasks={tasks} loading={loading} onRefresh={handleRefresh} />
-          <GraphView tasks={tasks} />
+          <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <span className="p-1 rounded bg-emerald-500/20 text-emerald-400">📋</span>
+              Task List
+            </h2>
+            <TaskList tasks={tasks} loading={loading} onRefresh={handleRefresh} />
+          </section>
+        </div>
+
+        {/* Right Column: Visualization */}
+        <div className="lg:col-span-12 xl:col-span-8 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="p-1 rounded bg-pink-500/20 text-pink-400">🕸️</span>
+            Dependency Graph
+          </h2>
+          <div className="glass p-1 rounded-xl h-[600px]">
+            <GraphView tasks={tasks} />
+          </div>
         </div>
       </div>
-    </div>
+    </Layout>
   )
 }
 
