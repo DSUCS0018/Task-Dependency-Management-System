@@ -2,9 +2,16 @@ from .models import Task
 
 def detect_cycle(source_task_id, target_task_id):
     """
-    Detects if adding a dependency (source_task -> target_task) creates a cycle.
-    Returns (bool, path).
-    Path is a list of task IDs involved in the cycle, e.g., [1, 3, 5, 1].
+    Detects if adding a dependency (source_task -> target_task) creates a cycle using DFS.
+
+    Args:
+        source_task_id (int): The ID of the task that will depend on the target.
+        target_task_id (int): The ID of the task being depended upon.
+
+    Returns:
+        tuple: (is_circular (bool), path (list[int]))
+               - is_circular: True if a cycle is detected.
+               - path: A list of task IDs representing the cycle (e.g., [1, 3, 5, 1]).
     """
     if source_task_id == target_task_id:
         return True, [source_task_id, target_task_id]
@@ -52,12 +59,18 @@ def detect_cycle(source_task_id, target_task_id):
 
 def update_task_status(task):
     """
-    Updates the task's status based on its dependencies.
-    Returns True if status changed, False otherwise.
+    Evaluates and updates the task's status based on the status of its dependencies.
+
     Rules:
-    - ALL dependencies 'completed' -> 'in_progress'
-    - ANY dependency 'blocked' -> 'blocked'
-    - Dependencies exist but not all 'completed' -> 'pending' (unless already 'blocked' by above rule)
+    - If ANY dependency is 'blocked' -> Task becomes 'blocked'.
+    - If ALL dependencies are 'completed' -> Task becomes 'in_progress' (Ready).
+    - If dependencies exist but not all are completed -> Task becomes 'pending'.
+    
+    Args:
+        task (Task): The task instance to evaluate.
+        
+    Returns:
+        bool: True if the status was changed, False otherwise.
     """
     dependencies = task.dependencies.all()
     
@@ -82,13 +95,6 @@ def update_task_status(task):
         new_status = 'blocked'
     elif all_completed:
         # If previously pending or blocked, and now all dependencies are done, it becomes ready (in_progress)
-        # Note: If it was already completed, should we revert it?
-        # Requirement: "If ALL dependencies are 'completed' set status to 'in_progress' (ready to work)"
-        # Usually if a task is already completed, we shouldn't revert it to in_progress automatically 
-        # just because dependencies are fine. But if it was pending/blocked, yes.
-        # Let's assume we only move forward or to blocked. 
-        # But for strict adherence: "set status to 'in_progress'".
-        # I'll add a check: if it's already 'completed', don't change it to 'in_progress'. 
         if task.status != 'completed':
             new_status = 'in_progress'
     else:
@@ -106,7 +112,11 @@ def update_task_status(task):
 
 def trigger_dependent_updates(task):
     """
-    Recursively updates status of tasks that depend on the given task.
+    Recursively triggers status updates for all tasks that depend on the given task.
+    This ensures that status changes propagate through the dependency chain.
+    
+    Args:
+        task (Task): The task that was just updated.
     """
     # Find all tasks that depend on this task
     # Reverse relation 'dependents' on TaskDependency model
