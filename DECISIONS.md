@@ -29,3 +29,17 @@ Status updates use a recursive approach:
 - We re-evaluate their status based on simple rules (All completed -> Ready; Any blocked -> Blocked).
 - If a dependent task's status changes, we recurse further.
 - **Safety**: Since we guarantee no circular dependencies exist (via the detection logic), this recursion is guaranteed to terminate and form a Directed Acyclic Graph (DAG).
+
+## 5. Additional Frontend Design Decisions
+
+### SVG for Graph Visualization
+We chose raw **SVG** over heavy charting libraries (like D3.js or Cytoscape) to keep the project lightweight and maintain full control over the rendering logic. SVG is performant for the target node count (20-30+) and allows for easy implementation of custom interactions like zoom, pan, and highlighting.
+
+### Hierarchical Layout (Longest Path)
+Instead of a complex force-directed layout, we implemented a deterministic **Hierarchical Layout** based on the Longest Path in the DAG (level assignment). This ensures that dependencies always flow clearly from left to right (or top to bottom), making the dependency chain immediately understandable to the user.
+
+### Defensive UX & Validation
+The frontend mirrors backend validation rules (e.g., preventing self-dependencies in the dropdown) to provide immediate feedback. However, it still gracefully handles backend errors (like cycle detection 400s) by displaying user-friendly messages with the specific cycle path, ensuring the user is never left guessing why an action failed.
+
+### Impact Analysis on Delete
+Deleting a task that others depend on is a destructive action that breaks the dependency chain. To prevent accidental data loss or invalid states, we implemented an **Impact Analysis Warning**. The system calculates dependent tasks on the fly and presents a confirmation dialog listing all tasks that will be affected, allowing the user to make an informed decision.

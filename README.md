@@ -4,17 +4,33 @@ A Django-based system for managing tasks with support for complex dependencies, 
 
 ## Tech Stack
 - **Backend:** Django 4.x, Django REST Framework
+- **Frontend:** React 18, Tailwind CSS, Axios
 - **Database:** SQLite (default) / MySQL
-- **Language:** Python 3.x
+- **Language:** Python 3.x, TypeScript
+
+## Frontend Overview
+The frontend is a lightweight, single-page application built with React and Tailwind CSS. It features:
+- **Task List & Form:** Intuitive interface for managing tasks and dependencies.
+- **Graph Visualization:** Custom SVG-based graph view with hierarchical layout, zoom, pan, and node highlighting.
+- **UX Polish:** Comprehensive validation, error handling, and loading states for a seamless experience.
+
+## Project Status
+**All tasks from the assignment specification have been fully implemented and verified.**
+
 
 ## Features
-- **Task Management:** Create and manage tasks with statuses (pending, in_progress, completed, blocked).
-- **Dependency Management:** Define dependencies between tasks.
+- **Task Management:** Create, update, and delete tasks with statuses (pending, in_progress, completed, blocked).
+- **Dependency Management:** Define dependencies between tasks with strict validation.
 - **Circular Dependency Detection:** Prevents cycles (e.g., A -> B -> A) using DFS and returns the cycle path.
 - **Auto Status Updates:**
     - Task becomes `blocked` if any dependency is `blocked`.
     - Task becomes `in_progress` (ready) only when all dependencies are `completed`.
     - Updates propagate recursively to dependent tasks.
+- **Dependency Visualization:** Interactive, hierarchical SVG graph to visualize task relationships.
+- **Robust UX:**
+    - Edge-case handling (e.g., impact analysis warning when deleting tasks).
+    - Real-time feedback and loading states for all actions.
+    - Defensive validation to prevent invalid states (e.g., self-dependencies).
 
 ## Setup Instructions
 
