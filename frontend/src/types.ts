@@ -5,6 +5,7 @@ export interface Task {
     title: string;
     description: string;
     status: TaskStatus;
+    dependencies: number[];
     created_at?: string;
     updated_at?: string;
 }
