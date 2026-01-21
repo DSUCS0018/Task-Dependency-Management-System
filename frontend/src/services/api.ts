@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { Task, TaskStatus, ApiError } from '../types';
+import type { Task, TaskStatus, ApiError } from '../types';
 
 const API_URL = 'http://localhost:8000/api';
 
@@ -34,18 +34,18 @@ export const taskService = {
     },
 
     updateTaskStatus: async (taskId: number, status: TaskStatus): Promise<Task> => {
-        const response = await api.patch(\`/tasks/\${taskId}/\`, { status });
-    return response.data;
-  },
+        const response = await api.patch(`/tasks/${taskId}/`, { status });
+        return response.data;
+    },
 
-  addDependency: async (taskId: number, dependsOnId: number): Promise<any> => {
-    const response = await api.post(\`/tasks/\${taskId}/dependencies/\`, { depends_on_id: dependsOnId });
-    return response.data;
-  },
+    addDependency: async (taskId: number, dependsOnId: number): Promise<any> => {
+        const response = await api.post(`/tasks/${taskId}/dependencies/`, { depends_on_id: dependsOnId });
+        return response.data;
+    },
 
-  deleteTask: async (taskId: number): Promise<void> => {
-    await api.delete(\`/tasks/\${taskId}/\`);
-  },
+    deleteTask: async (taskId: number): Promise<void> => {
+        await api.delete(`/tasks/${taskId}/`);
+    },
 };
 
 export default api;
