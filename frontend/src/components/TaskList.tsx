@@ -1,43 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import type { Task, TaskStatus } from '../types';
 import { taskService } from '../services/api';
 import TaskItem from './TaskItem';
 
-const TaskList: React.FC = () => {
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+interface TaskListProps {
+    tasks: Task[];
+    loading: boolean;
+    onRefresh: () => void;
+}
 
-    useEffect(() => {
-        fetchTasks();
-    }, []);
-
-    const fetchTasks = async () => {
-        try {
-            setLoading(true);
-            const data = await taskService.getTasks();
-            setTasks(data);
-            setError(null);
-        } catch (err) {
-            setError('Failed to load tasks. Is the backend running?');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
+const TaskList: React.FC<TaskListProps> = ({ tasks, loading, onRefresh }) => {
     const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
-        // Optimistic update (optional) or refetch.
-        // Since backend has logic (auto-updates), refetching is safer to see propagated changes.
         await taskService.updateTaskStatus(taskId, newStatus);
-        fetchTasks();
+        onRefresh();
     };
 
     const handleDelete = async (taskId: number) => {
         try {
             await taskService.deleteTask(taskId);
-            // Remove from local list to be snappy, or just refetch
-            setTasks(prev => prev.filter(t => t.id !== taskId));
+            onRefresh();
         } catch (err) {
             console.error(err);
             alert('Failed to delete task');
@@ -46,10 +27,6 @@ const TaskList: React.FC = () => {
 
     if (loading && tasks.length === 0) {
         return <div className="text-center py-8 text-gray-500">Loading tasks...</div>;
-    }
-
-    if (error) {
-        return <div className="text-center py-8 text-red-500">{error}</div>;
     }
 
     if (tasks.length === 0) {
@@ -69,7 +46,7 @@ const TaskList: React.FC = () => {
                         key={task.id}
                         task={task}
                         onStatusChange={handleStatusChange}
-                        onRefresh={fetchTasks}
+                        onRefresh={onRefresh}
                         onDelete={handleDelete}
                     />
                 ))}
